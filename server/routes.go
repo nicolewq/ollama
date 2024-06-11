@@ -122,8 +122,8 @@ func (s *Server) GenerateHandler(c *gin.Context) {
 		return
 	}
 
-	if model.IsEmbedding() {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "embedding models do not support generate"})
+	if !model.Has(CapabilityCompletion) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "model does not support completion"})
 		return
 	}
 
@@ -1290,8 +1290,8 @@ func (s *Server) ChatHandler(c *gin.Context) {
 		return
 	}
 
-	if model.IsEmbedding() {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "embedding models do not support chat"})
+	if !model.Has(CapabilityCompletion) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "model does not support chat completion"})
 		return
 	}
 
