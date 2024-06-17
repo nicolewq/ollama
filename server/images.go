@@ -62,7 +62,7 @@ type Model struct {
 	Template *template.Template
 }
 
-func (m *Model) Has(caps ...Capability) bool {
+func (m *Model) Has(caps ...Capability) (missing []Capability) {
 	for _, cap := range caps {
 		switch cap {
 		case CapabilityCompletion:
@@ -81,15 +81,15 @@ func (m *Model) Has(caps ...Capability) bool {
 			}
 
 			if _, ok := ggml.KV()[fmt.Sprintf("%s.pooling_type", ggml.KV().Architecture())]; ok {
-				return false
+				missing = append(missing, cap)
 			}
 		default:
 			slog.Error("unknown capability", "capability", cap)
-			return false
+			missing = append(missing, cap)
 		}
 	}
 
-	return true
+	return
 }
 
 func (m *Model) String() string {
