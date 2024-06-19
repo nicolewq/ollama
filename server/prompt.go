@@ -17,7 +17,7 @@ import (
 func chatPrompt(ctx context.Context, r *runnerRef, msgs []api.Message) (prompt string, images []llm.ImageData, _ error) {
 	// pull out any system messages which should always be included in the prompt
 	var system []api.Message
-	msgs = slices.DeleteFunc(msgs, func(m api.Message) bool {
+	msgs = slices.DeleteFunc(append(r.model.Messages, msgs...), func(m api.Message) bool {
 		if m.Role == "system" {
 			system = append(system, m)
 			return true

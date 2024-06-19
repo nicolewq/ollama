@@ -50,10 +50,6 @@ func loadModel(cmd *cobra.Command, opts *runOptions) error {
 	opts.MultiModal = slices.Contains(showResp.Details.Families, "clip")
 	opts.ParentModel = showResp.Details.ParentModel
 
-	if len(showResp.Messages) > 0 {
-		opts.Messages = append(opts.Messages, showResp.Messages...)
-	}
-
 	chatReq := &api.ChatRequest{
 		Model: opts.Model,
 	}

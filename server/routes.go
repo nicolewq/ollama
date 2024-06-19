@@ -152,9 +152,20 @@ func (s *Server) GenerateHandler(c *gin.Context) {
 	prompt := req.Prompt
 	if !req.Raw {
 		var msgs []api.Message
+
+		// precedence of system prompts
+		// 1. request system prompt
+		// 2. modelfile's system messages system
+		// 3. modelfile's system prompt
 		if req.System != "" {
 			msgs = append(msgs, api.Message{Role: "system", Content: req.System})
-		} else if r.model.System != "" {
+		}
+
+		if req.Context == nil {
+			msgs = append(msgs, r.model.Messages...)
+		}
+
+		if !slices.ContainsFunc(msgs, func(m api.Message) bool { return m.Role == "system" }) && r.model.System != "" {
 			msgs = append(msgs, api.Message{Role: "system", Content: r.model.System})
 		}
 
