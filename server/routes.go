@@ -130,7 +130,17 @@ func (s *Server) GenerateHandler(c *gin.Context) {
 	caps := []Capability{CapabilityCompletion}
 	r, err := s.scheduleRunner(c.Request.Context(), req.Model, caps, req.Options, req.KeepAlive)
 	if err != nil {
-		handleScheduleError(c, err)
+		handleScheduleError(c, req.Model, err)
+		return
+	}
+
+	if req.Prompt == "" {
+		c.JSON(http.StatusOK, api.GenerateResponse{
+			Model:      req.Model,
+			CreatedAt:  time.Now().UTC(),
+			Done:       true,
+			DoneReason: "load",
+		})
 		return
 	}
 
@@ -148,23 +158,11 @@ func (s *Server) GenerateHandler(c *gin.Context) {
 			msgs = append(msgs, api.Message{Role: "system", Content: r.model.System})
 		}
 
-		if req.Prompt != "" {
-			for _, i := range images {
-				msgs = append(msgs, api.Message{Role: "user", Content: fmt.Sprintf("[img-%d]", i.ID)})
-			}
-
-			msgs = append(msgs, api.Message{Role: "user", Content: req.Prompt})
+		for _, i := range images {
+			msgs = append(msgs, api.Message{Role: "user", Content: fmt.Sprintf("[img-%d]", i.ID)})
 		}
 
-		if len(msgs) == 0 {
-			c.JSON(http.StatusOK, api.GenerateResponse{
-				Model:      req.Model,
-				CreatedAt:  time.Now().UTC(),
-				Done:       true,
-				DoneReason: "load",
-			})
-			return
-		}
+		msgs = append(msgs, api.Message{Role: "user", Content: req.Prompt})
 
 		tmpl := r.model.Template
 		if req.Template != "" {
@@ -291,7 +289,7 @@ func (s *Server) EmbeddingsHandler(c *gin.Context) {
 
 	r, err := s.scheduleRunner(c.Request.Context(), req.Model, []Capability{}, req.Options, req.KeepAlive)
 	if err != nil {
-		handleScheduleError(c, err)
+		handleScheduleError(c, req.Model, err)
 		return
 	}
 
@@ -1146,7 +1144,7 @@ func (s *Server) ChatHandler(c *gin.Context) {
 	caps := []Capability{CapabilityCompletion}
 	r, err := s.scheduleRunner(c.Request.Context(), req.Model, caps, req.Options, req.KeepAlive)
 	if err != nil {
-		handleScheduleError(c, err)
+		handleScheduleError(c, req.Model, err)
 		return
 	}
 
@@ -1226,12 +1224,14 @@ func (s *Server) ChatHandler(c *gin.Context) {
 	streamResponse(c, ch)
 }
 
-func handleScheduleError(c *gin.Context, err error) {
+func handleScheduleError(c *gin.Context, name string, err error) {
 	switch {
 	case errors.Is(err, context.Canceled):
 		c.JSON(499, gin.H{"error": "request canceled"})
 	case errors.Is(err, ErrMaxQueue):
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+	case errors.Is(err, os.ErrNotExist):
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("model %q not found, try pulling it first", name)})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
