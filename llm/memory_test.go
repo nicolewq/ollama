@@ -43,10 +43,14 @@ func TestEstimateGPULayers(t *testing.T) {
 		"tokenizer.ggml.scores":         []float32{0},
 		"tokenizer.ggml.token_type":     []int32{0},
 	}, tensors)
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("failed to encode model: %v", err)
+	}
 
 	ggml, err := LoadModel(f.Name())
-	require.NoError(t, err)
+	if err != nil {
+		t.Fatalf("failed to load model: %v", err)
+	}
 
 	// Simple CPU scenario
 	gpus := []gpu.GpuInfo{

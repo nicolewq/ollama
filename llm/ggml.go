@@ -1,6 +1,7 @@
 package llm
 
 import (
+	"bufio"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -278,7 +279,31 @@ func DetectGGMLType(b []byte) string {
 	}
 }
 
+type bufferedForwardOnlySeeker struct {
+	r *bufio.Reader
+	n int
+}
+
+func (b *bufferedForwardOnlySeeker) Read(p []byte) (int, error) {
+	n, err := b.r.Read(p)
+	b.n += n
+	return n, err
+}
+
+func (b bufferedForwardOnlySeeker) Seek(offset int64, whence int) (int64, error) {
+	if whence != io.SeekCurrent {
+		return 0, fmt.Errorf("bufferedForwardOnlySeeker: unsupported whence: %d", whence)
+	}
+
+	// Read and discard bytes
+	n, err := b.r.Discard(int(offset))
+	b.n += n
+	return int64(b.n), err
+}
+
 func DecodeGGML(rs io.ReadSeeker) (*GGML, int64, error) {
+	rs = &bufferedForwardOnlySeeker{r: bufio.NewReader(rs)}
+
 	var magic uint32
 	if err := binary.Read(rs, binary.LittleEndian, &magic); err != nil {
 		return nil, 0, err
@@ -299,9 +324,7 @@ func DecodeGGML(rs io.ReadSeeker) (*GGML, int64, error) {
 	}
 
 	model, err := c.Decode(rs)
-	if errors.Is(err, io.EOF) {
-		// noop
-	} else if err != nil {
+	if err != nil {
 		return nil, 0, err
 	}
 

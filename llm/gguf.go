@@ -225,31 +225,31 @@ func (llm *gguf) Decode(rs io.ReadSeeker) error {
 	// patch KV with parameter count
 	llm.kv["general.parameter_count"] = llm.parameters
 
-	alignment, ok := llm.kv["general.alignment"].(uint32)
-	if !ok {
-		alignment = 32
-	}
+	// alignment, ok := llm.kv["general.alignment"].(uint32)
+	// if !ok {
+	// 	alignment = 32
+	// }
 
-	offset, err := rs.Seek(0, io.SeekCurrent)
-	if err != nil {
-		return err
-	}
+	// offset, err := rs.Seek(0, io.SeekCurrent)
+	// if err != nil {
+	// 	return err
+	// }
 
-	padding := llm.padding(offset, int64(alignment))
-	if _, err := rs.Seek(padding, io.SeekCurrent); err != nil {
-		return err
-	}
+	// padding := llm.padding(offset, int64(alignment))
+	// if _, err := rs.Seek(padding, io.SeekCurrent); err != nil {
+	// 	return err
+	// }
 
-	for _, tensor := range llm.tensors {
-		if _, err := rs.Seek(int64(tensor.Size()), io.SeekCurrent); err != nil {
-			return err
-		}
+	// for _, tensor := range llm.tensors {
+	// 	if _, err := rs.Seek(int64(tensor.Size()), io.SeekCurrent); err != nil {
+	// 		return err
+	// 	}
 
-		padding := llm.padding(int64(tensor.Size()), int64(alignment))
-		if _, err := rs.Seek(padding, io.SeekCurrent); err != nil {
-			return err
-		}
-	}
+	// 	padding := llm.padding(int64(tensor.Size()), int64(alignment))
+	// 	if _, err := rs.Seek(padding, io.SeekCurrent); err != nil {
+	// 		return err
+	// 	}
+	// }
 
 	return nil
 }
