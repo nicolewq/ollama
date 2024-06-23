@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 
 	"log/slog"
 )
@@ -285,6 +286,12 @@ func readGGUFV1String(llm *gguf, r io.Reader) (string, error) {
 	return b.String(), nil
 }
 
+var stringBuilderPool = sync.Pool{
+	New: func() interface{} {
+		return new(strings.Builder)
+	},
+}
+
 func readGGUFString(llm *gguf, r io.Reader) (string, error) {
 	if llm.Version == 1 {
 		return readGGUFV1String(llm, r)
@@ -295,8 +302,10 @@ func readGGUFString(llm *gguf, r io.Reader) (string, error) {
 		return "", err
 	}
 
-	var b bytes.Buffer
-	if _, err := io.CopyN(&b, r, int64(length)); err != nil {
+	b := stringBuilderPool.Get().(*strings.Builder)
+	b.Reset()
+	defer stringBuilderPool.Put(b)
+	if _, err := io.CopyN(b, r, int64(length)); err != nil {
 		return "", err
 	}
 
