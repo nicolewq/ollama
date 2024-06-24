@@ -203,34 +203,34 @@ fi
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#rhel-8-rocky-8
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#rhel-9-rocky-9
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#fedora
-# install_cuda_driver_yum() {
-#     status 'Installing NVIDIA repository...'
-#     case $PACKAGE_MANAGER in
-#         yum)
-#             $SUDO $PACKAGE_MANAGER -y install yum-utils
-#             $SUDO $PACKAGE_MANAGER-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/$1$2/$(uname -m)/cuda-$1$2.repo
-#             ;;
-#         dnf)
-#             $SUDO $PACKAGE_MANAGER config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/$1$2/$(uname -m)/cuda-$1$2.repo
-#             ;;
-#     esac
+install_cuda_driver_yum() {
+    status 'Installing NVIDIA repository...'
+    case $PACKAGE_MANAGER in
+        yum)
+            $SUDO $PACKAGE_MANAGER -y install yum-utils
+            $SUDO $PACKAGE_MANAGER-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/$1$2/$(uname -m)/cuda-$1$2.repo
+            ;;
+        dnf)
+            $SUDO $PACKAGE_MANAGER config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/$1$2/$(uname -m)/cuda-$1$2.repo
+            ;;
+    esac
 
-#     case $1 in
-#         rhel)
-#             status 'Installing EPEL repository...'
-#             # EPEL is required for third-party dependencies such as dkms and libvdpau
-#             $SUDO $PACKAGE_MANAGER -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-$2.noarch.rpm || true
-#             ;;
-#     esac
+    case $1 in
+        rhel)
+            status 'Installing EPEL repository...'
+            # EPEL is required for third-party dependencies such as dkms and libvdpau
+            $SUDO $PACKAGE_MANAGER -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-$2.noarch.rpm || true
+            ;;
+    esac
 
-#     status 'Installing CUDA driver...'
+    status 'Installing CUDA driver...'
 
-#     if [ "$1" = 'centos' ] || [ "$1$2" = 'rhel7' ]; then
-#         $SUDO $PACKAGE_MANAGER -y install nvidia-driver-latest-dkms
-#     fi
+    if [ "$1" = 'centos' ] || [ "$1$2" = 'rhel7' ]; then
+        $SUDO $PACKAGE_MANAGER -y install nvidia-driver-latest-dkms
+    fi
 
-#     $SUDO $PACKAGE_MANAGER -y install cuda-drivers
-# }
+    $SUDO $PACKAGE_MANAGER -y install cuda-drivers
+}
 
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#debian
