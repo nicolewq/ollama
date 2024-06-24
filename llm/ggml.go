@@ -294,6 +294,9 @@ func (b bufferedForwardOnlySeeker) Seek(offset int64, whence int) (int64, error)
 	if whence != io.SeekCurrent {
 		return 0, fmt.Errorf("bufferedForwardOnlySeeker: unsupported whence: %d", whence)
 	}
+	if offset < 0 {
+		return 0, fmt.Errorf("bufferedForwardOnlySeeker: negative offset: %d", offset)
+	}
 
 	// Read and discard bytes
 	n, err := b.r.Discard(int(offset))
