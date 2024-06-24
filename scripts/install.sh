@@ -234,94 +234,94 @@ install_cuda_driver_yum() {
 
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#ubuntu
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#debian
-# install_cuda_driver_apt() {
-#     status 'Installing NVIDIA repository...'
-#     curl -fsSL -o $TEMP_DIR/cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/$1$2/$(uname -m)/cuda-keyring_1.1-1_all.deb
+install_cuda_driver_apt() {
+    status 'Installing NVIDIA repository...'
+    curl -fsSL -o $TEMP_DIR/cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/$1$2/$(uname -m)/cuda-keyring_1.1-1_all.deb
 
-#     case $1 in
-#         debian)
-#             status 'Enabling contrib sources...'
-#             $SUDO sed 's/main/contrib/' < /etc/apt/sources.list | $SUDO tee /etc/apt/sources.list.d/contrib.list > /dev/null
-#             if [ -f "/etc/apt/sources.list.d/debian.sources" ]; then
-#                 $SUDO sed 's/main/contrib/' < /etc/apt/sources.list.d/debian.sources | $SUDO tee /etc/apt/sources.list.d/contrib.sources > /dev/null
-#             fi
-#             ;;
-#     esac
+    case $1 in
+        debian)
+            status 'Enabling contrib sources...'
+            $SUDO sed 's/main/contrib/' < /etc/apt/sources.list | $SUDO tee /etc/apt/sources.list.d/contrib.list > /dev/null
+            if [ -f "/etc/apt/sources.list.d/debian.sources" ]; then
+                $SUDO sed 's/main/contrib/' < /etc/apt/sources.list.d/debian.sources | $SUDO tee /etc/apt/sources.list.d/contrib.sources > /dev/null
+            fi
+            ;;
+    esac
 
-#     status 'Installing CUDA driver...'
-#     $SUDO dpkg -i $TEMP_DIR/cuda-keyring.deb
-#     $SUDO apt-get update
+    status 'Installing CUDA driver...'
+    $SUDO dpkg -i $TEMP_DIR/cuda-keyring.deb
+    $SUDO apt-get update
 
-#     [ -n "$SUDO" ] && SUDO_E="$SUDO -E" || SUDO_E=
-#     DEBIAN_FRONTEND=noninteractive $SUDO_E apt-get -y install cuda-drivers -q
-# }
+    [ -n "$SUDO" ] && SUDO_E="$SUDO -E" || SUDO_E=
+    DEBIAN_FRONTEND=noninteractive $SUDO_E apt-get -y install cuda-drivers -q
+}
 
-# if [ ! -f "/etc/os-release" ]; then
-#     error "Unknown distribution. Skipping CUDA installation."
-# fi
+if [ ! -f "/etc/os-release" ]; then
+    error "Unknown distribution. Skipping CUDA installation."
+fi
 
-# . /etc/os-release
+. /etc/os-release
 
-# OS_NAME=$ID
-# OS_VERSION=$VERSION_ID
+OS_NAME=$ID
+OS_VERSION=$VERSION_ID
 
-# PACKAGE_MANAGER=
-# for PACKAGE_MANAGER in dnf yum apt-get; do
-#     if available $PACKAGE_MANAGER; then
-#         break
-#     fi
-# done
+PACKAGE_MANAGER=
+for PACKAGE_MANAGER in dnf yum apt-get; do
+    if available $PACKAGE_MANAGER; then
+        break
+    fi
+done
 
-# if [ -z "$PACKAGE_MANAGER" ]; then
-#     error "Unknown package manager. Skipping CUDA installation."
-# fi
+if [ -z "$PACKAGE_MANAGER" ]; then
+    error "Unknown package manager. Skipping CUDA installation."
+fi
 
-# if ! check_gpu nvidia-smi || [ -z "$(nvidia-smi | grep -o "CUDA Version: [0-9]*\.[0-9]*")" ]; then
-#     case $OS_NAME in
-#         centos|rhel) install_cuda_driver_yum 'rhel' $(echo $OS_VERSION | cut -d '.' -f 1) ;;
-#         rocky) install_cuda_driver_yum 'rhel' $(echo $OS_VERSION | cut -c1) ;;
-#         fedora) [ $OS_VERSION -lt '37' ] && install_cuda_driver_yum $OS_NAME $OS_VERSION || install_cuda_driver_yum $OS_NAME '37';;
-#         amzn) install_cuda_driver_yum 'fedora' '37' ;;
-#         debian) install_cuda_driver_apt $OS_NAME $OS_VERSION ;;
-#         ubuntu) install_cuda_driver_apt $OS_NAME $(echo $OS_VERSION | sed 's/\.//') ;;
-#         *) exit ;;
-#     esac
-# fi
+if ! check_gpu nvidia-smi || [ -z "$(nvidia-smi | grep -o "CUDA Version: [0-9]*\.[0-9]*")" ]; then
+    case $OS_NAME in
+        centos|rhel) install_cuda_driver_yum 'rhel' $(echo $OS_VERSION | cut -d '.' -f 1) ;;
+        rocky) install_cuda_driver_yum 'rhel' $(echo $OS_VERSION | cut -c1) ;;
+        fedora) [ $OS_VERSION -lt '37' ] && install_cuda_driver_yum $OS_NAME $OS_VERSION || install_cuda_driver_yum $OS_NAME '37';;
+        amzn) install_cuda_driver_yum 'fedora' '37' ;;
+        debian) install_cuda_driver_apt $OS_NAME $OS_VERSION ;;
+        ubuntu) install_cuda_driver_apt $OS_NAME $(echo $OS_VERSION | sed 's/\.//') ;;
+        *) exit ;;
+    esac
+fi
 
-# if ! lsmod | grep -q nvidia || ! lsmod | grep -q nvidia_uvm; then
-#     KERNEL_RELEASE="$(uname -r)"
-#     case $OS_NAME in
-#         rocky) $SUDO $PACKAGE_MANAGER -y install kernel-devel kernel-headers ;;
-#         centos|rhel|amzn) $SUDO $PACKAGE_MANAGER -y install kernel-devel-$KERNEL_RELEASE kernel-headers-$KERNEL_RELEASE ;;
-#         fedora) $SUDO $PACKAGE_MANAGER -y install kernel-devel-$KERNEL_RELEASE ;;
-#         debian|ubuntu) $SUDO apt-get -y install linux-headers-$KERNEL_RELEASE ;;
-#         *) exit ;;
-#     esac
+if ! lsmod | grep -q nvidia || ! lsmod | grep -q nvidia_uvm; then
+    KERNEL_RELEASE="$(uname -r)"
+    case $OS_NAME in
+        rocky) $SUDO $PACKAGE_MANAGER -y install kernel-devel kernel-headers ;;
+        centos|rhel|amzn) $SUDO $PACKAGE_MANAGER -y install kernel-devel-$KERNEL_RELEASE kernel-headers-$KERNEL_RELEASE ;;
+        fedora) $SUDO $PACKAGE_MANAGER -y install kernel-devel-$KERNEL_RELEASE ;;
+        debian|ubuntu) $SUDO apt-get -y install linux-headers-$KERNEL_RELEASE ;;
+        *) exit ;;
+    esac
 
-#     NVIDIA_CUDA_VERSION=$($SUDO dkms status | awk -F: '/added/ { print $1 }')
-#     if [ -n "$NVIDIA_CUDA_VERSION" ]; then
-#         $SUDO dkms install $NVIDIA_CUDA_VERSION
-#     fi
+    NVIDIA_CUDA_VERSION=$($SUDO dkms status | awk -F: '/added/ { print $1 }')
+    if [ -n "$NVIDIA_CUDA_VERSION" ]; then
+        $SUDO dkms install $NVIDIA_CUDA_VERSION
+    fi
 
-#     if lsmod | grep -q nouveau; then
-#         status 'Reboot to complete NVIDIA CUDA driver install.'
-#         exit 0
-#     fi
+    if lsmod | grep -q nouveau; then
+        status 'Reboot to complete NVIDIA CUDA driver install.'
+        exit 0
+    fi
 
-#     $SUDO modprobe nvidia
-#     $SUDO modprobe nvidia_uvm
-# fi
+    $SUDO modprobe nvidia
+    $SUDO modprobe nvidia_uvm
+fi
 
 # # make sure the NVIDIA modules are loaded on boot with nvidia-persistenced
-# if command -v nvidia-persistenced > /dev/null 2>&1; then
-#     $SUDO touch /etc/modules-load.d/nvidia.conf
-#     MODULES="nvidia nvidia-uvm"
-#     for MODULE in $MODULES; do
-#         if ! grep -qxF "$MODULE" /etc/modules-load.d/nvidia.conf; then
-#             echo "$MODULE" | sudo tee -a /etc/modules-load.d/nvidia.conf > /dev/null
-#         fi
-#     done
-# fi
+if command -v nvidia-persistenced > /dev/null 2>&1; then
+    $SUDO touch /etc/modules-load.d/nvidia.conf
+    MODULES="nvidia nvidia-uvm"
+    for MODULE in $MODULES; do
+        if ! grep -qxF "$MODULE" /etc/modules-load.d/nvidia.conf; then
+            echo "$MODULE" | sudo tee -a /etc/modules-load.d/nvidia.conf > /dev/null
+        fi
+    done
+fi
 
-# status "NVIDIA GPU ready."
-# install_success
+status "NVIDIA GPU ready."
+install_success
