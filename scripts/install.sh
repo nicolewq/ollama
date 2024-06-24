@@ -136,41 +136,41 @@ fi
 
 # # WSL2 only supports GPUs via nvidia passthrough
 # # so check for nvidia-smi to determine if GPU is available
-# if [ "$IS_WSL2" = true ]; then
-#     if available nvidia-smi && [ -n "$(nvidia-smi | grep -o "CUDA Version: [0-9]*\.[0-9]*")" ]; then
-#         status "Nvidia GPU detected."
-#     fi
-#     install_success
-#     exit 0
-# fi
+if [ "$IS_WSL2" = true ]; then
+    if available nvidia-smi && [ -n "$(nvidia-smi | grep -o "CUDA Version: [0-9]*\.[0-9]*")" ]; then
+        status "Nvidia GPU detected."
+    fi
+    install_success
+    exit 0
+fi
 
 # # Install GPU dependencies on Linux
-# if ! available lspci && ! available lshw; then
-#     warning "Unable to detect NVIDIA/AMD GPU. Install lspci or lshw to automatically detect and install GPU dependencies."
-#     exit 0
-# fi
+if ! available lspci && ! available lshw; then
+    warning "Unable to detect NVIDIA/AMD GPU. Install lspci or lshw to automatically detect and install GPU dependencies."
+    exit 0
+fi
 
-# check_gpu() {
-#     # Look for devices based on vendor ID for NVIDIA and AMD
-#     case $1 in
-#         lspci)
-#             case $2 in
-#                 nvidia) available lspci && lspci -d '10de:' | grep -q 'NVIDIA' || return 1 ;;
-#                 amdgpu) available lspci && lspci -d '1002:' | grep -q 'AMD' || return 1 ;;
-#             esac ;;
-#         lshw)
-#             case $2 in
-#                 nvidia) available lshw && $SUDO lshw -c display -numeric -disable network | grep -q 'vendor: .* \[10DE\]' || return 1 ;;
-#                 amdgpu) available lshw && $SUDO lshw -c display -numeric -disable network | grep -q 'vendor: .* \[1002\]' || return 1 ;;
-#             esac ;;
-#         nvidia-smi) available nvidia-smi || return 1 ;;
-#     esac
-# }
+check_gpu() {
+    # Look for devices based on vendor ID for NVIDIA and AMD
+    case $1 in
+        lspci)
+            case $2 in
+                nvidia) available lspci && lspci -d '10de:' | grep -q 'NVIDIA' || return 1 ;;
+                amdgpu) available lspci && lspci -d '1002:' | grep -q 'AMD' || return 1 ;;
+            esac ;;
+        lshw)
+            case $2 in
+                nvidia) available lshw && $SUDO lshw -c display -numeric -disable network | grep -q 'vendor: .* \[10DE\]' || return 1 ;;
+                amdgpu) available lshw && $SUDO lshw -c display -numeric -disable network | grep -q 'vendor: .* \[1002\]' || return 1 ;;
+            esac ;;
+        nvidia-smi) available nvidia-smi || return 1 ;;
+    esac
+}
 
-# if check_gpu nvidia-smi; then
-#     status "NVIDIA GPU installed."
-#     exit 0
-# fi
+if check_gpu nvidia-smi; then
+    status "NVIDIA GPU installed."
+    exit 0
+fi
 
 # if ! check_gpu lspci nvidia && ! check_gpu lshw nvidia && ! check_gpu lspci amdgpu && ! check_gpu lshw amdgpu; then
 #     install_success
