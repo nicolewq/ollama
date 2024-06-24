@@ -82,56 +82,57 @@ trap install_success EXIT
 
 # Everything from this point onwards is optional.
 
-# configure_systemd() {
-#     if ! id ollama >/dev/null 2>&1; then
-#         status "Creating ollama user..."
-#         $SUDO useradd -r -s /bin/false -U -m -d /usr/share/ollama ollama
-#     fi
-#     if getent group render >/dev/null 2>&1; then
-#         status "Adding ollama user to render group..."
-#         $SUDO usermod -a -G render ollama
-#     fi
-#     if getent group video >/dev/null 2>&1; then
-#         status "Adding ollama user to video group..."
-#         $SUDO usermod -a -G video ollama
-#     fi
+configure_systemd() {
+    if ! id ollama >/dev/null 2>&1; then
+        status "Creating ollama user..."
+        $SUDO useradd -r -s /bin/false -U -m -d /usr/share/ollama ollama
+    fi
+    if getent group render >/dev/null 2>&1; then
+        status "Adding ollama user to render group..."
+        $SUDO usermod -a -G render ollama
+    fi
+    if getent group video >/dev/null 2>&1; then
+        status "Adding ollama user to video group..."
+        $SUDO usermod -a -G video ollama
+    fi
 
-#     status "Adding current user to ollama group..."
-#     $SUDO usermod -a -G ollama $(whoami)
+    status "Adding current user to ollama group..."
+    $SUDO usermod -a -G ollama $(whoami)
 
-#     status "Creating ollama systemd service..."
-#     cat <<EOF | $SUDO tee /etc/systemd/system/ollama.service >/dev/null
-# [Unit]
-# Description=Ollama Service
-# After=network-online.target
+    status "Creating ollama systemd service..."
+    cat <<EOF | $SUDO tee /etc/systemd/system/ollama.service >/dev/null
 
-# [Service]
-# ExecStart=$BINDIR/ollama serve
-# User=ollama
-# Group=ollama
-# Restart=always
-# RestartSec=3
-# Environment="PATH=$PATH"
+[Unit]
+Description=Ollama Service
+After=network-online.target
 
-# [Install]
-# WantedBy=default.target
-# EOF
-#     SYSTEMCTL_RUNNING="$(systemctl is-system-running || true)"
-#     case $SYSTEMCTL_RUNNING in
-#         running|degraded)
-#             status "Enabling and starting ollama service..."
-#             $SUDO systemctl daemon-reload
-#             $SUDO systemctl enable ollama
+[Service]
+ExecStart=$BINDIR/ollama serve
+User=ollama
+Group=ollama
+Restart=always
+RestartSec=3
+Environment="PATH=$PATH"
 
-#             start_service() { $SUDO systemctl restart ollama; }
-#             trap start_service EXIT
-#             ;;
-#     esac
-# }
+[Install]
+WantedBy=default.target
+EOF
+    SYSTEMCTL_RUNNING="$(systemctl is-system-running || true)"
+    case $SYSTEMCTL_RUNNING in
+        running|degraded)
+            status "Enabling and starting ollama service..."
+            $SUDO systemctl daemon-reload
+            $SUDO systemctl enable ollama
 
-# if available systemctl; then
-#     configure_systemd
-# fi
+            start_service() { $SUDO systemctl restart ollama; }
+            trap start_service EXIT
+            ;;
+    esac
+}
+
+if available systemctl; then
+    configure_systemd
+fi
 
 # # WSL2 only supports GPUs via nvidia passthrough
 # # so check for nvidia-smi to determine if GPU is available
