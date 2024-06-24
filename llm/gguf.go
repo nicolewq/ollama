@@ -325,7 +325,14 @@ func writeGGUFString(llm *gguf, w io.Writer, s string) error {
 	return err
 }
 
-func readGGUFV1Array(llm *gguf, r io.Reader) (a []any, err error) {
+type array struct {
+	size   int
+	values []any
+}
+
+const maxArraySize = 1024
+
+func readGGUFV1Array(llm *gguf, r io.Reader) (*array, error) {
 	t, err := readGGUF[uint32](llm, r)
 	if err != nil {
 		return nil, err
@@ -336,6 +343,10 @@ func readGGUFV1Array(llm *gguf, r io.Reader) (a []any, err error) {
 		return nil, err
 	}
 
+	a := &array{
+		size:   int(n),
+		values: make([]any, 0, min(maxArraySize, int(n))),
+	}
 	for i := 0; uint32(i) < n; i++ {
 		var e any
 		switch t {
@@ -370,13 +381,15 @@ func readGGUFV1Array(llm *gguf, r io.Reader) (a []any, err error) {
 			return nil, err
 		}
 
-		a = append(a, e)
+		if len(a.values) < maxArraySize {
+			a.values = append(a.values, e)
+		}
 	}
 
-	return
+	return a, nil
 }
 
-func readGGUFArray(llm *gguf, r io.Reader) (a []any, err error) {
+func readGGUFArray(llm *gguf, r io.Reader) (*array, error) {
 	if llm.Version == 1 {
 		return readGGUFV1Array(llm, r)
 	}
@@ -391,6 +404,10 @@ func readGGUFArray(llm *gguf, r io.Reader) (a []any, err error) {
 		return nil, err
 	}
 
+	a := &array{
+		size:   int(n),
+		values: make([]any, 0, min(maxArraySize, int(n))),
+	}
 	for i := 0; uint64(i) < n; i++ {
 		var e any
 		switch t {
@@ -425,10 +442,12 @@ func readGGUFArray(llm *gguf, r io.Reader) (a []any, err error) {
 			return nil, err
 		}
 
-		a = append(a, e)
+		if len(a.values) < maxArraySize {
+			a.values = append(a.values, e)
+		}
 	}
 
-	return
+	return a, nil
 }
 
 func writeGGUFArray[S ~[]E, E any](llm *gguf, w io.Writer, t uint32, s S) error {
