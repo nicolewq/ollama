@@ -3,6 +3,7 @@ package llm
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -328,6 +329,10 @@ func writeGGUFString(llm *gguf, w io.Writer, s string) error {
 type array struct {
 	size   int
 	values []any
+}
+
+func (a *array) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.values)
 }
 
 const maxArraySize = 1024
