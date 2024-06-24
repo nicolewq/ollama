@@ -88,8 +88,6 @@ func loadModel(cmd *cobra.Command, opts *runOptions) error {
 }
 
 func generateInteractive(cmd *cobra.Command, opts runOptions) error {
-	opts.Messages = make([]api.Message, 0)
-
 	err := loadModel(cmd, &opts)
 	if err != nil {
 		return err

@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -287,38 +286,12 @@ func createBlob(cmd *cobra.Command, client *api.Client, path string) (string, er
 }
 
 func RunHandler(cmd *cobra.Command, args []string) error {
-	client, err := api.ClientFromEnvironment()
-	if err != nil {
-		return err
-	}
-
-	name := args[0]
-
-	// check if the model exists on the server
-	show, err := client.Show(cmd.Context(), &api.ShowRequest{Name: name})
-	var statusError api.StatusError
-	switch {
-	case errors.As(err, &statusError) && statusError.StatusCode == http.StatusNotFound:
-		if err := PullHandler(cmd, []string{name}); err != nil {
-			return err
-		}
-
-		show, err = client.Show(cmd.Context(), &api.ShowRequest{Name: name})
-		if err != nil {
-			return err
-		}
-	case err != nil:
-		return err
-	}
-
 	interactive := true
 
 	opts := runOptions{
-		Model:       args[0],
-		WordWrap:    os.Getenv("TERM") == "xterm-256color",
-		Options:     map[string]interface{}{},
-		MultiModal:  slices.Contains(show.Details.Families, "clip"),
-		ParentModel: show.Details.ParentModel,
+		Model:    args[0],
+		WordWrap: os.Getenv("TERM") == "xterm-256color",
+		Options:  map[string]interface{}{},
 	}
 
 	format, err := cmd.Flags().GetString("format")
@@ -362,11 +335,10 @@ func RunHandler(cmd *cobra.Command, args []string) error {
 	}
 	opts.WordWrap = !nowrap
 
-	if !interactive {
-		return generate(cmd, opts)
+	if interactive {
+		return generateInteractive(cmd, opts)
 	}
-
-	return generateInteractive(cmd, opts)
+	return generate(cmd, opts)
 }
 
 func errFromUnknownKey(unknownKeyErr error) error {
@@ -1018,11 +990,9 @@ func generate(cmd *cobra.Command, opts runOptions) error {
 		return nil
 	}
 
-	if opts.MultiModal {
-		opts.Prompt, opts.Images, err = extractFileData(opts.Prompt)
-		if err != nil {
-			return err
-		}
+	opts.Prompt, opts.Images, err = extractFileData(opts.Prompt)
+	if err != nil {
+		return err
 	}
 
 	request := api.GenerateRequest{
