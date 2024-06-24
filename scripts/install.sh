@@ -172,32 +172,32 @@ if check_gpu nvidia-smi; then
     exit 0
 fi
 
-# if ! check_gpu lspci nvidia && ! check_gpu lshw nvidia && ! check_gpu lspci amdgpu && ! check_gpu lshw amdgpu; then
-#     install_success
-#     warning "No NVIDIA/AMD GPU detected. Ollama will run in CPU-only mode."
-#     exit 0
-# fi
+if ! check_gpu lspci nvidia && ! check_gpu lshw nvidia && ! check_gpu lspci amdgpu && ! check_gpu lshw amdgpu; then
+    install_success
+    warning "No NVIDIA/AMD GPU detected. Ollama will run in CPU-only mode."
+    exit 0
+fi
 
-# if check_gpu lspci amdgpu || check_gpu lshw amdgpu; then
-#     # Look for pre-existing ROCm v6 before downloading the dependencies
-#     for search in "${HIP_PATH:-''}" "${ROCM_PATH:-''}" "/opt/rocm" "/usr/lib64"; do
-#         if [ -n "${search}" ] && [ -e "${search}/libhipblas.so.2" -o -e "${search}/lib/libhipblas.so.2" ]; then
-#             status "Compatible AMD GPU ROCm library detected at ${search}"
-#             install_success
-#             exit 0
-#         fi
-#     done
+if check_gpu lspci amdgpu || check_gpu lshw amdgpu; then
+    # Look for pre-existing ROCm v6 before downloading the dependencies
+    for search in "${HIP_PATH:-''}" "${ROCM_PATH:-''}" "/opt/rocm" "/usr/lib64"; do
+        if [ -n "${search}" ] && [ -e "${search}/libhipblas.so.2" -o -e "${search}/lib/libhipblas.so.2" ]; then
+            status "Compatible AMD GPU ROCm library detected at ${search}"
+            install_success
+            exit 0
+        fi
+    done
 
-#     status "Downloading AMD GPU dependencies..."
-#     $SUDO rm -rf /usr/share/ollama/lib
-#     $SUDO chmod o+x /usr/share/ollama
-#     $SUDO install -o ollama -g ollama -m 755 -d /usr/share/ollama/lib/rocm
-#     curl --fail --show-error --location --progress-bar "https://ollama.com/download/ollama-linux-amd64-rocm.tgz${VER_PARAM}" \
-#         | $SUDO tar zx --owner ollama --group ollama -C /usr/share/ollama/lib/rocm .
-#     install_success
-#     status "AMD GPU ready."
-#     exit 0
-# fi
+    status "Downloading AMD GPU dependencies..."
+    $SUDO rm -rf /usr/share/ollama/lib
+    $SUDO chmod o+x /usr/share/ollama
+    $SUDO install -o ollama -g ollama -m 755 -d /usr/share/ollama/lib/rocm
+    curl --fail --show-error --location --progress-bar "https://ollama.com/download/ollama-linux-amd64-rocm.tgz${VER_PARAM}" \
+        | $SUDO tar zx --owner ollama --group ollama -C /usr/share/ollama/lib/rocm .
+    install_success
+    status "AMD GPU ready."
+    exit 0
+fi
 
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#rhel-7-centos-7
 # # ref: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#rhel-8-rocky-8
